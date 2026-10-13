@@ -1,76 +1,86 @@
-import streamlit as st
-import random
+mport streamlit as st
 
-st.set_page_config(page_title="Lén lấy đồ công ty Slay", page_icon="💼")
+st.set_page_config(page_title="Lén lấy đồ công ty", page_icon="💼")
 
 st.title("💼 Nhiệm vụ: Lén lấy đồ công ty rồi trốn thoát!")
-st.write("Đi xung quanh phòng, lấy đủ 3 món đồ và tránh bà chủ tóc xoăn cuốn lô hồng!")
+st.write("Đi xung quanh phòng (🚶‍♂️), nhặt đủ 3 món đồ (💻, 📱, ☕) và tránh xa Bà chủ (👩‍🦱)!")
 
-# Khởi tạo trạng thái game trong session_state
-if "pos" not in st.session_state:
-    st.session_state.pos = [0, 0]
-if "score" not in st.session_state:
-    st.session_state.score = 0
-if "collected_items" not in st.session_state:
-    st.session_state.collected_items = []
+# 1. Khởi tạo trạng thái game
+if "player_pos" not in st.session_state:
+    st.session_state.player_pos = [0, 0]
+if "collected" not in st.session_state:
+    st.session_state.collected = []
 if "game_over" not in st.session_state:
     st.session_state.game_over = False
 
-# Vị trí của Bà chủ tóc xoăn cuốn lô hồng
-boss = [3, 3]
-
-# Danh sách các món đồ cần lấy (dùng tên biến tránh xung đột với method items())
-game_items = {
-    (1, 1): "💻 Laptop công ty",
-    (3, 2): "📱 Điện thoại sếp",
+# Vị trí cố định của Bà chủ và Đồ đạc
+BOSS_POS = (3, 3)
+ITEMS = {
+    (1, 1): "💻 Laptop",
+    (3, 1): "📱 Điện thoại",
     (5, 2): "☕ Cốc cà phê"
 }
 
-# Điều khiển di chuyển
-st.markdown("### 🕹️ Điều khiển nhân vật")
-col1, col2, col3 = st.columns(3)
-
-with col1:
+# 2. Xử lý di chuyển
+col_left, col_mid, col_right = st.columns(3)
+with col_left:
     if st.button("⬅️ Trái"):
-        st.session_state.pos[1] = max(0, st.session_state.pos[1] - 1)
-with col2:
+        st.session_state.player_pos[1] = max(0, st.session_state.player_pos[1] - 1)
+with col_mid:
     if st.button("⬆️ Lên"):
-        st.session_state.pos[0] = max(0, st.session_state.pos[0] - 1)
+        st.session_state.player_pos[0] = max(0, st.session_state.player_pos[0] - 1)
     if st.button("⬇️ Xuống"):
-        st.session_state.pos[0] = min(5, st.session_state.pos[0] + 1)
-with col3:
+        st.session_state.player_pos[0] = min(5, st.session_state.player_pos[0] + 1)
+with col_right:
     if st.button("➡️ Phải"):
-        st.session_state.pos[1] = min(5, st.session_state.pos[1] + 1)
+        st.session_state.player_pos[1] = min(5, st.session_state.player_pos[1] + 1)
 
-pos = tuple(st.session_state.pos)
+px, py = st.session_state.player_pos
 
-# Kiểm tra trạng thái va chạm và thu thập
+# Kiểm tra nhặt đồ hoặc gặp boss
+if (px, py) == BOSS_POS:
+    st.session_state.game_over = True
+elif (px, py) in ITEMS and ITEMS[(px, py)] not in st.session_state.collected:
+    st.session_state.collected.append(ITEMS[(px, py)])
+
+# 3. VẼ BẢN ĐỒ CĂN PHÒNG HIỂN THỊ HÌNH ẢNH NHÂN VẬT & BÀ CHỦ
+st.markdown("### 🏢 Căn phòng công ty")
+
 if st.session_state.game_over:
-    st.error("💥 Game Over! Bạn đã bị bắt bởi bà chủ tóc xoăn cuốn lô hồng!")
+    st.error("💥 BẠN ĐÃ BỊ BÀ CHỦ TÓC XOĂN BẮT ĐƯỢC ROÀI!")
     if st.button("🔄 Chơi lại"):
-        st.session_state.pos = [0, 0]
-        st.session_state.score = 0
-        st.session_state.collected_items = []
+        st.session_state.player_pos = [0, 0]
+        st.session_state.collected = []
         st.session_state.game_over = False
         st.rerun()
 else:
-    # Kiểm tra nếu gặp boss
-    if pos == tuple(boss):
-        st.session_state.game_over = True
-        st.rerun()
+    # Tạo bản đồ 6x6 dạng ô cờ
+    grid_html = "<style>.cell { width: 50px; height: 50px; text-align: center; font-size: 28px; border: 1px solid #ccc; display: inline-block; line-height: 50px; background-color: #f9f9f9; }</style>"
     
-    # Kiểm tra nếu nhặt được đồ (dùng biến game_items thay vì items để tránh lỗi method)
-    elif pos in game_items and game_items[pos] not in st.session_state.collected_items:
-        item_name = game_items[pos]
-        st.session_state.collected_items.append(item_name)
-        st.session_state.score += 10
-        st.success(f"✨ Bạn đã lén lấy thành công: {item_name}!")
+    for r in range(6):
+        row_str = ""
+        for c in range(6):
+            if [r, c] == st.session_state.player_pos:
+                icon = "🚶‍♂️" # Nhân vật của bạn
+            elif (r, c) == BOSS_POS:
+                icon = "👩‍🦱" # Bà chủ tóc xoăn
+            elif (r, c) in ITEMS and ITEMS[(r, c)] not in st.session_state.collected:
+                if ITEMS[(r, c)] == "💻 Laptop": icon = "💻"
+                elif ITEMS[(r, c)] == "📱 Điện thoại": icon = "📱"
+                else: icon = "☕"
+            else:
+                icon = "⬜" # Ô trống căn phòng
+            
+            row_str += f"<div class='cell'>{icon}</div>"
+        grid_html += f"<div>{row_str}</div>"
+    
+    st.markdown(grid_html, unsafe_allow_html=True)
 
-    # Hiển thị thông tin trạng thái
-    st.info(f"📍 Vị trí hiện tại của bạn: {pos}")
-    st.write(f"🏆 Điểm số: {st.session_state.score}")
-    st.write(f"🎒 Đồ đã lấy: {st.session_state.collected_items}")
+    # Hiển thị tiến trình
+    st.write(f"🎒 Đồ đã lấy: {len(st.session_state.collected)}/3 món -> {st.session_state.collected}")
 
-    if len(st.session_state.collected_items) >= 3:
+    if len(st.session_state.collected) == 3:
         st.balloons()
-        st.success("🎉 Chúc mừng! Bạn đã lấy đủ đồ và trốn thoát thành công khỏi văn phòng!")
+        st.success("🎉 BẠN ĐÃ LẤY ĐỦ ĐỒ VÀ TRỐN THOÁT THÀNH CÔNG!")
+
+
