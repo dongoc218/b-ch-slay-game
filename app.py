@@ -74,6 +74,3 @@ else:
     if len(st.session_state.collected_items) >= 3:
         st.balloons()
         st.success("🎉 Chúc mừng! Bạn đã lấy đủ đồ và trốn thoát thành công khỏi văn phòng!")
-Đã gửi 1 phút trước
-Soạn
-Viết cho An Nguyễn Nguyễn
