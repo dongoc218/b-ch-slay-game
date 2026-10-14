@@ -1,16 +1,8 @@
-import streamlit as st
-import streamlit.components.v1 as components
-
-# Cấu hình trang Streamlit
-st.set_page_config(page_title="Office Escape - Slay Game 3D", layout="wide")
-
-# Code game HTML/JS đã được tinh chỉnh lại kích thước chuẩn để hiển thị đầy đủ
-game_html = """
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Office Escape - Slay Game</title>
+    <title>Slay Game - Bà Chủ Nhảy Né Chướng Ngại Vật</title>
     <style>
         body {
             margin: 0;
@@ -27,280 +19,237 @@ game_html = """
         #game-container {
             position: relative;
             box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-            border: 3px solid #6366f1;
-            border-radius: 10px;
+            border: 4px solid #ec4899;
+            border-radius: 12px;
             background: #1e293b;
         }
-        canvas {
-            display: block;
-        }
+        canvas { display: block; background: linear-gradient(to bottom, #1e293b, #0f172a); }
         #ui {
             position: absolute;
-            top: 10px;
-            left: 10px;
-            right: 10px;
-            display: flex;
-            justify-content: space-between;
+            top: 15px; left: 15px; right: 15px;
+            display: flex; justify-content: space-between;
             pointer-events: none;
+            font-size: 18px; font-weight: bold;
         }
         .badge {
-            background: rgba(15, 23, 42, 0.9);
-            padding: 6px 14px;
-            border-radius: 15px;
-            font-size: 14px;
-            font-weight: bold;
+            background: rgba(15, 23, 42, 0.85);
+            padding: 8px 16px;
+            border-radius: 20px;
             border: 1px solid rgba(255,255,255,0.2);
         }
         #instructions {
-            margin-top: 10px;
-            font-size: 14px;
+            margin-top: 12px;
+            font-size: 15px;
             color: #94a3b8;
             text-align: center;
         }
         kbd {
-            background: #334155;
-            padding: 2px 6px;
-            border-radius: 4px;
-            color: #fff;
-            font-weight: bold;
+            background: #334155; padding: 3px 8px; border-radius: 4px; color: #fff; font-weight: bold;
         }
     </style>
 </head>
 <body>
 
     <div id="game-container">
-        <!-- Đặt kích thước chuẩn vừa khít màn hình Streamlit -->
-        <canvas id="gameCanvas" width="760" height="420"></canvas>
+        <canvas id="gameCanvas" width="800" height="400"></canvas>
         <div id="ui">
-            <div class="badge" id="mission">🎯 Nhiệm vụ: Lấy 3 tài liệu & Chạy tới Cửa Xanh!</div>
-            <div class="badge" id="status" style="color:#ef4444">🏃 Đang chạy</div>
+            <div class="badge" id="score-text">🏆 Điểm: 0</div>
+            <div class="badge" id="high-score-text" style="color: #f59e0b;">⭐ Kỷ lục: 0</div>
         </div>
     </div>
     <div id="instructions">
-        Dùng phím <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> để đi | Giữ <kbd>Shift</kbd> để ẨN NẤP sau bàn!
+        Nhấn phím <kbd>Space</kbd> (Dấu cách) hoặc bấm <kbd>Mũi tên lên</kbd> để điều khiển Bà Chủ NHẢY QUA chướng ngại vật!
     </div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        let gameState = 'PLAYING';
-        let itemsCollected = 0;
-        let totalItems = 3;
+        let gameState = 'PLAYING'; // PLAYING, GAMEOVER
+        let score = 0;
+        let highScore = 0;
 
-        // Nhân viên (Áo xanh, mũ đỏ)
-        let player = {
-            x: 80,
-            y: 210,
-            radius: 14,
-            speed: 3.2,
-            crouchSpeed: 1.4,
-            isCrouching: false
-        };
-
-        // Bà chủ (Váy hồng)
+        // Nhân vật: Bà chủ mập mặc váy hồng
         let boss = {
-            x: 650,
-            y: 210,
-            radius: 18,
-            speed: 1.6,
-            state: 'PATROL',
-            visionRange: 150,
-            target: {x: 550, y: 100}
+            x: 100,
+            y: 280,
+            radiusX: 25,
+            radiusY: 30,
+            vy: 0,
+            gravity: 0.8,
+            jumpForce: -13,
+            isGrounded: true
         };
 
-        // Bàn làm việc (Chỗ nấp)
-        let desks = [
-            {x: 200, y: 80, w: 100, h: 60},
-            {x: 200, y: 280, w: 100, h: 60},
-            {x: 440, y: 160, w: 110, h: 100}
-        ];
+        // Chướng ngại vật (ghế văn phòng, thùng tài liệu chạy tới)
+        let obstacles = [];
+        let obstacleTimer = 0;
+        let gameSpeed = 5;
 
-        // Vật phẩm cần nhặt
-        let items = [
-            {x: 250, y: 50, collected: false, icon: '📁'},
-            {x: 495, y: 290, collected: false, icon: '💼'},
-            {x: 700, y: 360, collected: false, icon: '👑'}
-        ];
+        // Bắt sự kiện phím bấm
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' || e.code === 'ArrowUp') {
+                e.preventDefault();
+                if (boss.isGrounded && gameState === 'PLAYING') {
+                    boss.vy = boss.jumpForce;
+                    boss.isGrounded = false;
+                } else if (gameState === 'GAMEOVER') {
+                    resetGame();
+                }
+            }
+        });
 
-        // Cửa thoát
-        let exitDoor = {x: 700, y: 20, w: 45, h: 50};
+        // Bấm chuột/chạm vào màn hình cũng nhảy được
+        window.addEventListener('click', () => {
+            if (boss.isGrounded && gameState === 'PLAYING') {
+                boss.vy = boss.jumpForce;
+                boss.isGrounded = false;
+            } else if (gameState === 'GAMEOVER') {
+                resetGame();
+            }
+        });
 
-        let keys = {};
-        window.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true; });
-        window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
+        function resetGame() {
+            gameState = 'PLAYING';
+            score = 0;
+            obstacles = [];
+            gameSpeed = 5;
+            boss.y = 280;
+            boss.vy = 0;
+            boss.isGrounded = true;
+        }
 
         function update() {
             if (gameState !== 'PLAYING') return;
 
-            player.isCrouching = keys['shift'] || false;
-            let currentSpeed = player.isCrouching ? player.crouchSpeed : player.speed;
+            // Xử lý nhảy của bà chủ
+            boss.vy += boss.gravity;
+            boss.y += boss.vy;
 
-            let dx = 0, dy = 0;
-            if (keys['w'] || keys['arrowup']) dy -= currentSpeed;
-            if (keys['s'] || keys['arrowdown']) dy += currentSpeed;
-            if (keys['a'] || keys['arrowleft']) dx -= currentSpeed;
-            if (keys['d'] || keys['arrowright']) dx += currentSpeed;
-
-            player.x += dx;
-            if (checkDeskCollision(player)) player.x -= dx;
-            player.y += dy;
-            if (checkDeskCollision(player)) player.y -= dy;
-
-            player.x = Math.max(20, Math.min(canvas.width - 20, player.x));
-            player.y = Math.max(20, Math.min(canvas.height - 20, player.y));
-
-            // Nhặt đồ
-            items.forEach(item => {
-                if (!item.collected) {
-                    let dist = Math.hypot(player.x - item.x, player.y - item.y);
-                    if (dist < 25) {
-                        item.collected = true;
-                        itemsCollected++;
-                        document.getElementById('mission').innerText =🎯 Nhiệm vụ: Đã lấy (${itemsCollected}/${totalItems}) tài liệu`;
-                    }
-                }
-            });
-
-            // Thắng game
-            if (itemsCollected >= totalItems) {
-                let distToExit = Math.hypot(player.x - (exitDoor.x + exitDoor.w/2), player.y - (exitDoor.y + exitDoor.h/2));
-                if (distToExit < 35) {
-                    gameState = 'WIN';
-                }
+            // Chạm đất
+            if (boss.y >= 280) {
+                boss.y = 280;
+                boss.vy = 0;
+                boss.isGrounded = true;
             }
 
-            // AI Bà chủ
-            let distToBoss = Math.hypot(boss.x - player.x, boss.y - player.y);
-            
-            if (distToBoss < boss.visionRange && !player.isCrouching) {
-                boss.state = 'CHASE';
-            } else if (distToBoss > boss.visionRange * 1.5) {
-                boss.state = 'PATROL';
+            // Tăng tốc độ game theo điểm số
+            gameSpeed = 5 + Math.floor(score / 10) * 0.5;
+
+            // Sinh chướng ngại vật liên tục
+            obstacleTimer++;
+            if (obstacleTimer > Math.max(50, 100 - score * 2)) {
+                obstacles.push({
+                    x: canvas.width,
+                    y: 285,
+                    w: 30,
+                    h: 45,
+                    type: Math.random() > 0.5 ? 'box' : 'chair'
+                });
+                obstacleTimer = 0;
             }
 
-            if (boss.state === 'CHASE') {
-                let angle = Math.atan2(player.y - boss.y, player.x - boss.x);
-                boss.x += Math.cos(angle) * boss.speed;
-                boss.y += Math.sin(angle) * boss.speed;
+            // Di chuyển và kiểm tra chướng ngại vật
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                obstacles[i].x -= gameSpeed;
 
-                if (distToBoss < player.radius + boss.radius) {
+                // Va chạm giữa bà chủ và chướng ngại vật
+                let bx = boss.x;
+                let by = boss.y - 15;
+                let ox = obstacles[i].x + obstacles[i].w / 2;
+                let oy = obstacles[i].y + obstacles[i].h / 2;
+
+                let dist = Math.hypot(bx - ox, by - oy);
+                if (dist < 32) {
                     gameState = 'GAMEOVER';
+                    if (score > highScore) highScore = score;
                 }
-            } else {
-                let targetDist = Math.hypot(boss.target.x - boss.x, boss.target.y - boss.y);
-                if (targetDist < 15) {
-                    boss.target = {
-                        x: Math.random() * 300 + 400,
-                        y: Math.random() * 300 + 50
-                    };
+
+                // Qua màn / qua chướng ngại vật tính điểm
+                if (!obstacles[i].passed && obstacles[i].x < boss.x) {
+                    obstacles[i].passed = true;
+                    score += 1;
                 }
-                let angle = Math.atan2(boss.target.y - boss.y, boss.target.x - boss.x);
-                boss.x += Math.cos(angle) * (boss.speed * 0.6);
-                boss.y += Math.sin(angle) * (boss.speed * 0.6);
+
+                // Xóa chướng ngại vật ra khỏi mảng khi ra khỏi màn hình
+                if (obstacles[i].x < -50) {
+                    obstacles.splice(i, 1);
+                }
             }
 
-            let statusEl = document.getElementById('status');
-            if (player.isCrouching) {
-                statusEl.innerText = "🤫 Đang ẩn nấp";
-                statusEl.style.color = "#10b981";
-            } else {
-                statusEl.innerText = "🏃 Đang chạy";
-                statusEl.style.color = "#ef4444";
-            }
-        }
-
-        function checkDeskCollision(entity) {
-            for (let desk of desks) {
-                if (entity.x + entity.radius > desk.x &&
-                    entity.x - entity.radius < desk.x + desk.w &&
-                    entity.y + entity.radius > desk.y &&
-                    entity.y - entity.radius < desk.y + desk.h) {
-                    return true;
-                }
-            }
-            return false;
+            // Cập nhật giao diện điểm
+            document.getElementById('score-text').innerText = 🏆 Điểm: ${score};
+            document.getElementById('high-score-text').innerText = ⭐ Kỷ lục: ${highScore};
         }
 
         function draw() {
-            // Nền phòng
-            ctx.fillStyle = '#1e293b';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            // Xóa màn hình
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Lưới sàn
+            // Vẽ đường sàn nhà văn phòng
             ctx.strokeStyle = '#334155';
-            ctx.lineWidth = 1;
-            for (let i = 0; i < canvas.width; i += 40) {
-                ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); ctx.stroke();
-            }
-
-            // Cửa thoát
-            ctx.fillStyle = itemsCollected >= totalItems ? '#10b981' : '#475569';
-            ctx.fillRect(exitDoor.x, exitDoor.y, exitDoor.w, exitDoor.h);
-            ctx.fillStyle = '#fff';
-            ctx.font = 'bold 12px sans-serif';
-            ctx.fillText("EXIT", exitDoor.x + 10, exitDoor.y + 30);
-
-            // Bàn làm việc
-            desks.forEach(desk => {
-                ctx.fillStyle = '#78350f';
-                ctx.fillRect(desk.x, desk.y, desk.w, desk.h);
-                ctx.fillStyle = '#92400e';
-                ctx.fillRect(desk.x + 5, desk.y + 5, desk.w - 10, desk.h - 10);
-            });
-
-            // Vật phẩm
-            items.forEach(item => {
-                if (!item.collected) {
-                    ctx.font = '22px sans-serif';
-                    ctx.fillText(item.icon, item.x - 10, item.y + 8);
-                }
-            });
-
-            // Nhân viên (Player)
-            ctx.save();
-            let pRadius = player.isCrouching ? player.radius * 0.75 : player.radius;
+            ctx.lineWidth = 3;
             ctx.beginPath();
-            ctx.arc(player.x, player.y, pRadius, 0, Math.PI * 2);
-            ctx.fillStyle = '#3b82f6';
-            ctx.fill();
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = '#ffffff';
+            ctx.moveTo(0, 315);
+            ctx.lineTo(canvas.width, 315);
             ctx.stroke();
-            // Mũ đỏ
-            ctx.fillStyle = '#ef4444';
+
+            // Vẽ các chướng ngại vật (ghế/thùng đồ)
+            obstacles.forEach(obs => {
+                ctx.fillStyle = obs.type === 'box' ? '#b45309' : '#475569';
+                ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 1.5;
+                ctx.strokeRect(obs.x, obs.y, obs.w, obs.h);
+            });
+
+            // Vẽ BÀ CHỦ MẶC VÁY HỒNG (Nhân vật chính)
+            ctx.save();
+            ctx.translate(boss.x, boss.y);
+
+            // Thân / Váy hồng đặc trưng
+            ctx.fillStyle = '#ec4899';
             ctx.beginPath();
-            ctx.arc(player.x, player.y - 2, pRadius * 0.6, Math.PI, 0, false);
+            ctx.ellipse(0, 0, boss.radiusX, boss.radiusY, 0, 0, Math.PI * 2);
             ctx.fill();
+            ctx.lineWidth = 2.5;
+            ctx.strokeStyle = '#fff';
+            ctx.stroke();
+
+            // Tóc và lô cuốn tóc kinh điển
+            ctx.fillStyle = '#451a03';
+            ctx.beginPath();
+            ctx.arc(0, -25, 16, Math.PI, 0, false);
+            ctx.fill();
+
+            // Lô cuốn tóc màu hồng trên đầu
+            ctx.fillStyle = '#f472b6';
+            ctx.fillRect(-8, -38, 7, 10);
+            ctx.fillRect(2, -38, 7, 10);
+
+            // Gậy chỉ thị / Cây chổi trên tay
+            ctx.fillStyle = '#9333ea';
+            ctx.fillRect(15, -10, 5, 35);
+
             ctx.restore();
 
-            // Bà chủ (Boss)
-            if (boss.state === 'PATROL') {
-                ctx.fillStyle = 'rgba(239, 68, 68, 0.08)';
-                ctx.beginPath();
-                ctx.arc(boss.x, boss.y, boss.visionRange, 0, Math.PI * 2);
-                ctx.fill();
-            }
-            ctx.beginPath();
-            ctx.arc(boss.x, boss.y, boss.radius, 0, Math.PI * 2);
-            ctx.fillStyle = boss.state === 'CHASE' ? '#991b1b' : '#ec4899';
-            ctx.fill();
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = '#ffffff';
-            ctx.stroke();
-
-            // Thắng / Thua
-            if (gameState !== 'PLAYING') {
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.88)';
+            // Màn hình Game Over
+            if (gameState === 'GAMEOVER') {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = gameState === 'WIN' ? '#10b981' : '#ef4444';
-                ctx.font = 'bold 26px sans-serif';
+
+                ctx.fillStyle = '#ef4444';
+                ctx.font = 'bold 30px sans-serif';
                 ctx.textAlign = 'center';
-                ctx.fillText(gameState === 'WIN' ? '🎉 THẮNG RỒI! TRỐN THÀNH CÔNG!' : '💥 BỊ BÀ CHỦ TÓM GỌN!', canvas.width / 2, canvas.height / 2 - 10);
-                ctx.font = '14px sans-serif';
-                ctx.fillStyle = '#cbd5e1';
-                ctx.fillText("Nhấn F5 để chơi lại", canvas.width / 2, canvas.height / 2 + 25);
+                ctx.fillText('💥 BÀ CHỦ ĐÃ VẤP NGÃ!', canvas.width / 2, canvas.height / 2 - 20);
+
+                ctx.fillStyle = '#fff';
+                ctx.font = '18px sans-serif';
+                ctx.fillText(Điểm đạt được: ${score}, canvas.width / 2, canvas.height / 2 + 20);
+
+                ctx.fillStyle = '#10b981';
+                ctx.font = '15px sans-serif';
+                ctx.fillText('Nhấn phím SPACE hoặc Click để chơi lại', canvas.width / 2, canvas.height / 2 + 55);
                 ctx.textAlign = 'left';
             }
         }
@@ -315,10 +264,7 @@ game_html = """
     </script>
 </body>
 </html>
-"""
 
-# Hiển thị game chuẩn với chiều cao vừa khít
-components.html(game_html, height=520)
 
 
 
