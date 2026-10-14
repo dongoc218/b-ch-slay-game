@@ -1,2 +1,2 @@
-# b-ch-slay-game
-Game Bà chủ slay. lén lấy đồ và trốn nè bà chủ
+ninja fruit
+hay chat de duoc nhiu diem
