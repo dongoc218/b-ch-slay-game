@@ -27,9 +27,7 @@ html lang="en">
     <header class="w-full max-w-5xl flex justify-between items-center px-4 py-3 bg-slate-900/80 border-b border-slate-800 backdrop-blur-md z-10 shadow-lg">
         <div class="flex items-center space-x-3">
             <div class="w-3 h-3 rounded-full bg-red-500 animate-ping"></div>
-
-    '<h1 class="pixel-font text-xs sm:text-sm text-amber-400 tracking-wider">OFFICE STEALTH 2.5D</h1>',
-    unsafe_allow_html=True
+            <h1 class="pixel-font text-xs sm:text-sm text-amber-400 tracking-wider">OFFICE STEALTH 2.5D</h1>
         </div>
         <div class="flex items-center space-x-6 text-xs sm:text-sm font-semibold">
             <div class="flex items-center space-x-2 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
@@ -50,6 +48,7 @@ html lang="en">
             <div id="overlay" class="absolute inset-0 bg-slate-950/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center z-20">
                 <div class="max-w-md w-full bg-slate-900 border border-slate-700 p-8 rounded-3xl shadow-2xl space-y-6">
                     <div class="w-16 h-16 bg-blue-600/20 text-blue-400 rounded-2xl flex items-center justify-center mx-auto border border-blue-500/30 text-2xl font-bold">
+                        🕵️‍♂️
                     </div>
                     <div>
                         <h2 id="overlayTitle" class="pixel-font text-lg sm:text-xl text-white mb-2">STEALTH SURVIVAL</h2>
@@ -58,8 +57,8 @@ html lang="en">
                         </p>
                     </div>
                     <div class="bg-slate-800/60 p-4 rounded-xl text-left text-xs space-y-2 text-slate-300 border border-slate-700/50">
-                        <p>'💻' <b>Controls:</b> Arrow Keys / WASD or Virtual D-Pad</p>
-                        <p>'🔴' <b>Stealth:</b> Hide behind desks & plants to lose aggro</p>
+                        <p>💻 <b>Controls:</b> Arrow Keys / WASD or Virtual D-Pad</p>
+                        <p>🔴 <b>Stealth:</b> Hide behind desks & plants to lose aggro</p>
                     </div>
                     <button id="startBtn" class="w-full py-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 pixel-font text-xs sm:text-sm rounded-xl font-extrabold shadow-lg shadow-amber-500/20 transition-all transform active:scale-95">
                         START MISSION
@@ -76,7 +75,7 @@ html lang="en">
         <div class="flex items-center space-x-2 sm:hidden mx-auto">
             <div class="grid grid-cols-3 gap-1 w-32 h-24">
                 <div></div>
-                <button id="btnUp" class="bg-slate-800 active:bg-slate-700 border border-slate-700 rounded-lg flex items-center justify-center text-white text-xs'''▲'button>
+                <button id="btnUp" class="bg-slate-800 active:bg-slate-700 border border-slate-700 rounded-lg flex items-center justify-center text-white text-xs">▲</button>
                 <div></div>
                 <button id="btnLeft" class="bg-slate-800 active:bg-slate-700 border border-slate-700 rounded-lg flex items-center justify-center text-white text-xs">◀</button>
                 <button id="btnDown" class="bg-slate-800 active:bg-slate-700 border border-slate-700 rounded-lg flex items-center justify-center text-white text-xs">▼</button>
@@ -576,5 +575,369 @@ html lang="en">
         requestAnimationFrame(loop);
     </script>
 </body>
+10:09
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Office Stealth - Trốn Tìm Công Sở</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            background: #111;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        #game-container {
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            border: 4px solid #333;
+            border-radius: 8px;
+            background: #1e1e2f;
+        }
+        canvas {
+            display: block;
+            background: #222533;
+        }
+        #ui {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            right: 15px;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+            font-size: 18px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.9);
+        }
+        .badge {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        #instructions {
+            margin-top: 12px;
+            font-size: 14px;
+            color: #aaa;
+            text-align: center;
+        }
+        kbd {
+            background: #333;
+            border: 1px solid #555;
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-family: monospace;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
 
+    <div id="game-container">
+        <canvas id="gameCanvas" width="800" height="500"></canvas>
+        <div id="ui">
+            <div class="badge" id="mission-text">Nhiệm vụ: Tìm 3 tài liệu công ty & trốn đến Cửa Thoát!</div>
+            <div class="badge" id="status-text">Trạng thái: 🏃 Đang chạy</div>
+        </div>
+    </div>
+    <div id="instructions">
+        Dùng các phím <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> hoặc <kbd>Mũi tên</kbd> để di chuyển. Giữ <kbd>Shift</kbd> để lén lút ẩn nấp sau bàn làm việc!
+    </div>
 
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Trạng thái Game
+        let gameState = 'PLAYING'; // PLAYING, WIN, GAMEOVER
+        let score = 0;
+        let itemsCollected = 0;
+        const totalItems = 3;
+
+        // Người chơi (Nhân viên áo xanh mũ đỏ)
+        let player = {
+            x: 100,
+            y: 250,
+            radius: 14,
+            speed: 3.2,
+            crouchSpeed: 1.5,
+            isCrouching: false,
+            color: '#3498db',
+            hatColor: '#e74c3c'
+        };
+
+        // Bà chủ (Boss mặc váy hồng cầm gậy)
+        let boss = {
+            x: 680,
+            y: 250,
+            radius: 18,
+            speed: 1.8,
+            state: 'PATROL', // PATROL, CHASE
+            patrolTarget: {x: 680, y: 100},
+            visionRange: 160
+        };
+
+        // Danh sách bàn làm việc (Vật cản & chỗ nấp)
+        let desks = [
+            {x: 220, y: 120, w: 100, h: 60},
+            {x: 220, y: 320, w: 100, h: 60},
+            {x: 450, y: 100, w: 100, h: 60},
+            {x: 450, y: 340, w: 100, h: 60}
+        ];
+
+        // Vật phẩm cần thu thập (Tài liệu/Hồ sơ)
+        let items = [
+            {x: 270, y: 80, collected: false, icon: '📁'},
+            {x: 500, y: 430, collected: false, icon: '💼'},
+            {x: 720, y: 400, collected: false, icon: '👑'}
+        ];
+
+        // Cửa thoát hiểm
+        let exitDoor = {x: 750, y: 50, w: 35, h: 55};
+
+        // Điều khiển bàn phím
+        let keys = {};
+        window.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true; });
+        window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
+
+        function update() {
+            if (gameState !== 'PLAYING') return;
+
+            // Xử lý nấp (Shift)
+            player.isCrouching = keys['shift'] || false;
+            let currentSpeed = player.isCrouching ? player.crouchSpeed : player.speed;
+
+            // Di chuyển người chơi
+            let dx = 0, dy = 0;
+            if (keys['w'] || keys['arrowup']) dy -= currentSpeed;
+            if (keys['s'] || keys['arrowdown']) dy += currentSpeed;
+            if (keys['a'] || keys['arrowleft']) dx -= currentSpeed;
+            if (keys['d'] || keys['arrowright']) dx += currentSpeed;
+
+            // Kiểm tra va chạm với bàn làm việc
+            player.x += dx;
+            if (checkDeskCollision(player)) player.x -= dx;
+            player.y += dy;
+            if (checkDeskCollision(player)) player.y -= dy;
+
+            // Giới hạn trong khung hình
+            player.x = Math.max(player.radius, Math.min(canvas.width - player.radius, player.x));
+            player.y = Math.max(player.radius, Math.min(canvas.height - player.radius, player.y));
+
+            // Thu thập vật phẩm
+            items.forEach(item => {
+                if (!item.collected) {
+                    let dist = Math.hypot(player.x - item.x, player.y - item.y);
+                    if (dist < player.radius + 15) {
+                        item.collected = true;
+                        itemsCollected++;
+                        score += 100;
+                        updateUI();
+                    }
+                }
+            });
+
+            // Kiểm tra chiến thắng (Đủ đồ & tới cửa)
+            if (itemsCollected >= totalItems) {
+                let distToExit = Math.hypot(player.x - (exitDoor.x + exitDoor.w/2), player.y - (exitDoor.y + exitDoor.h/2));
+                if (distToExit < 30) {
+                    gameState = 'WIN';
+                }
+            }
+
+            // AI Bà chủ (Boss)
+            let distToBoss = Math.hypot(boss.x - player.x, boss.y - player.y);
+            
+            // Nếu người chơi không nấp và nằm trong tầm nhìn của boss -> Bị phát hiện (Truy đuổi)
+            if (distToBoss < boss.visionRange && !player.isCrouching) {
+                boss.state = 'CHASE';
+            } else if (distToBoss > boss.visionRange * 1.5) {
+                boss.state = 'PATROL';
+            }
+
+            if (boss.state === 'CHASE') {
+                // Đuổi theo player
+                let angle = Math.atan2(player.y - boss.y, player.x - boss.x);
+                boss.x += Math.cos(angle) * boss.speed;
+                boss.y += Math.sin(angle) * boss.speed;
+
+                // Bắt được player
+                if (distToBoss < player.radius + boss.radius - 5) {
+                    gameState = 'GAMEOVER';
+                }
+            } else {
+                // Đi tuần tra quanh văn phòng
+                let targetDist = Math.hypot(boss.patrolTarget.x - boss.x, boss.patrolTarget.y - boss.y);
+                if (targetDist < 10) {
+                    // Đổi điểm tuần tra ngẫu nhiên
+                    boss.patrolTarget = {
+                        x: Math.random() * 400 + 350,
+                        y: Math.random() * 350 + 70
+                    };
+                }
+                let angle = Math.atan2(boss.patrolTarget.y - boss.y, boss.patrolTarget.x - boss.x);
+                boss.x += Math.cos(angle) * (boss.speed * 0.7);
+                boss.y += Math.sin(angle) * (boss.speed * 0.7);
+            }
+        }
+
+        function checkDeskCollision(entity) {
+            for (let desk of desks) {
+                if (entity.x + entity.radius > desk.x &&
+                    entity.x - entity.radius < desk.x + desk.w &&
+                    entity.y + entity.radius > desk.y &&
+                    entity.y - entity.radius < desk.y + desk.h) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function updateUI() {
+            let statusEl = document.getElementById('status-text');
+            let missionEl = document.getElementById('mission-text');
+
+            if (itemsCollected >= totalItems) {
+                missionEl.innerText = "Nhiệm vụ: Đã lấy đủ đồ! Chạy ngay đến Cửa Xanh!";
+            } else {
+                missionEl.innerText = Nhiệm vụ: Lấy tài liệu (${itemsCollected}/${totalItems}) & trốn bà chủ!;
+            }
+
+            if (player.isCrouching) {
+                statusEl.innerText = "Trạng thái: 🤫 Đang ẩn nấp";
+                statusEl.style.color = "#2ecc71";
+            } else {
+                statusEl.innerText = "Trạng thái: 🏃 Đang chạy";
+                statusEl.style.color = "#e74c3c";
+            }
+        }
+
+        function draw() {
+            // Xóa màn hình canvas phong cách văn phòng hiện đại
+            ctx.fillStyle = '#222533';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Vẽ thảm văn phòng họa tiết nhẹ
+            ctx.strokeStyle = '#2a2e43';
+            ctx.lineWidth = 1;
+            for(let i=0; i<canvas.width; i+=40) {
+                ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); ctx.stroke();
+            }
+
+            // Vẽ Cửa Thoát Hiểm (Exit Door)
+            ctx.fillStyle = itemsCollected >= totalItems ? '#2ecc71' : '#555';
+            ctx.fillRect(exitDoor.x, exitDoor.y, exitDoor.w, exitDoor.h);
+            ctx.fillStyle = '#fff';
+            ctx.font = '10px Arial';
+            ctx.fillText("EXIT", exitDoor.x + 6, exitDoor.y + 32);
+
+            // Vẽ bàn làm việc (Văn phòng 3D mô phỏng)
+            desks.forEach(desk => {
+                // Đổ bóng bàn
+                ctx.fillStyle = 'rgba(0,0,0,0.4)';
+                ctx.fillRect(desk.x + 5, desk.y + 5, desk.w, desk.h);
+                // Mặt bàn
+                ctx.fillStyle = '#5c4033';
+                ctx.fillRect(desk.x, desk.y, desk.w, desk.h);
+                ctx.fillStyle = '#795548';
+                ctx.fillRect(desk.x + 4, desk.y + 4, desk.w - 8, desk.h - 8);
+                // Máy tính trên bàn
+                ctx.fillStyle = '#333';
+                ctx.fillRect(desk.x + 35, desk.y + 15, 30, 20);
+            });
+
+            // Vẽ vật phẩm
+            items.forEach(item => {
+                if (!item.collected) {
+                    ctx.font = '20px Arial';
+                    ctx.fillText(item.icon, item.x - 10, item.y + 7);
+                }
+            });
+
+            // Vẽ nhân viên (Player)
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.isCrouching ? player.radius * 0.7 : player.radius, 0, Math.PI * 2);
+            ctx.fillStyle = player.color;
+            ctx.fill();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#fff';
+            ctx.stroke();
+            // Mũ đỏ đặc trưng
+            ctx.fillStyle = player.hatColor;
+            ctx.beginPath();
+            ctx.arc(player.x, player.y - 4, player.isCrouching ? 6 : 8, Math.PI, 0, false);
+            ctx.fill();
+            ctx.restore();
+
+            // Vẽ Bà chủ (Boss)
+            ctx.save();
+            // Vùng tầm nhìn khi đi tuần
+            if (boss.state === 'PATROL') {
+                ctx.fillStyle = 'rgba(231, 76, 60, 0.08)';
+                ctx.beginPath();
+                ctx.arc(boss.x, boss.y, boss.visionRange, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            // Thân boss (Váy hồng)
+            ctx.beginPath();
+            ctx.arc(boss.x, boss.y, boss.radius, 0, Math.PI * 2);
+            ctx.fillStyle = boss.state === 'CHASE' ? '#c0392b' : '#ff69b4';
+            ctx.fill();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#fff';
+            ctx.stroke();
+            // Gậy chỉ thị / Cây chổi của Boss
+            ctx.fillStyle = '#8e44ad';
+            ctx.fillRect(boss.x + 10, boss.y - 12, 4, 25);
+            ctx.restore();
+
+            // Màn hình kết thúc (Thắng / Thua)
+            if (gameState !== 'PLAYING') {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 32px Arial';
+                ctx.textAlign = 'center';
+                
+                if (gameState === 'WIN') {
+                    ctx.fillStyle = '#2ecc71';
+                    ctx.fillText("🎉 CHIẾN THẮNG! BẠN ĐÃ TRỐN THÀNH CÔNG!", canvas.width / 2, canvas.height / 2 - 20);
+                } else {
+                    ctx.fillStyle = '#e74c3c';
+                    ctx.fillText("💥 BỊ BÀ CHỦ TÓM GỌN!", canvas.width / 2, canvas.height / 2 - 20);
+                }
+                
+                ctx.font = '16px Arial';
+                ctx.fillStyle = '#aaa';
+                ctx.fillText("Nhấn phím F5 để chơi lại", canvas.width / 2, canvas.height / 2 + 25);
+                ctx.textAlign = 'left';
+            }
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Khởi chạy game
+        gameLoop();
+    </script>
+</body>
+</html>
