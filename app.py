@@ -1,3 +1,11 @@
+import streamlit as st
+import streamlit.components.v1 as components
+
+# Cấu hình trang Streamlit
+st.set_page_config(page_title="Slay Game - Bà Chủ Nhảy", layout="wide")
+
+# Đoạn mã HTML/JS của game được bọc an toàn trong chuỗi Python
+game_html = """
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -65,11 +73,10 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        let gameState = 'PLAYING'; // PLAYING, GAMEOVER
+        let gameState = 'PLAYING';
         let score = 0;
         let highScore = 0;
 
-        // Nhân vật: Bà chủ mập mặc váy hồng
         let boss = {
             x: 100,
             y: 280,
@@ -81,12 +88,10 @@
             isGrounded: true
         };
 
-        // Chướng ngại vật (ghế văn phòng, thùng tài liệu chạy tới)
         let obstacles = [];
         let obstacleTimer = 0;
         let gameSpeed = 5;
 
-        // Bắt sự kiện phím bấm
         window.addEventListener('keydown', (e) => {
             if (e.code === 'Space' || e.code === 'ArrowUp') {
                 e.preventDefault();
@@ -99,7 +104,6 @@
             }
         });
 
-        // Bấm chuột/chạm vào màn hình cũng nhảy được
         window.addEventListener('click', () => {
             if (boss.isGrounded && gameState === 'PLAYING') {
                 boss.vy = boss.jumpForce;
@@ -122,21 +126,17 @@
         function update() {
             if (gameState !== 'PLAYING') return;
 
-            // Xử lý nhảy của bà chủ
             boss.vy += boss.gravity;
             boss.y += boss.vy;
 
-            // Chạm đất
             if (boss.y >= 280) {
                 boss.y = 280;
                 boss.vy = 0;
                 boss.isGrounded = true;
             }
 
-            // Tăng tốc độ game theo điểm số
             gameSpeed = 5 + Math.floor(score / 10) * 0.5;
 
-            // Sinh chướng ngại vật liên tục
             obstacleTimer++;
             if (obstacleTimer > Math.max(50, 100 - score * 2)) {
                 obstacles.push({
@@ -149,11 +149,9 @@
                 obstacleTimer = 0;
             }
 
-            // Di chuyển và kiểm tra chướng ngại vật
             for (let i = obstacles.length - 1; i >= 0; i--) {
                 obstacles[i].x -= gameSpeed;
 
-                // Va chạm giữa bà chủ và chướng ngại vật
                 let bx = boss.x;
                 let by = boss.y - 15;
                 let ox = obstacles[i].x + obstacles[i].w / 2;
@@ -165,28 +163,23 @@
                     if (score > highScore) highScore = score;
                 }
 
-                // Qua màn / qua chướng ngại vật tính điểm
                 if (!obstacles[i].passed && obstacles[i].x < boss.x) {
                     obstacles[i].passed = true;
                     score += 1;
                 }
 
-                // Xóa chướng ngại vật ra khỏi mảng khi ra khỏi màn hình
                 if (obstacles[i].x < -50) {
                     obstacles.splice(i, 1);
                 }
             }
 
-            // Cập nhật giao diện điểm
             document.getElementById('score-text').innerText = 🏆 Điểm: ${score};
             document.getElementById('high-score-text').innerText = ⭐ Kỷ lục: ${highScore};
         }
 
         function draw() {
-            // Xóa màn hình
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Vẽ đường sàn nhà văn phòng
             ctx.strokeStyle = '#334155';
             ctx.lineWidth = 3;
             ctx.beginPath();
@@ -194,7 +187,6 @@
             ctx.lineTo(canvas.width, 315);
             ctx.stroke();
 
-            // Vẽ các chướng ngại vật (ghế/thùng đồ)
             obstacles.forEach(obs => {
                 ctx.fillStyle = obs.type === 'box' ? '#b45309' : '#475569';
                 ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
@@ -203,11 +195,9 @@
                 ctx.strokeRect(obs.x, obs.y, obs.w, obs.h);
             });
 
-            // Vẽ BÀ CHỦ MẶC VÁY HỒNG (Nhân vật chính)
             ctx.save();
             ctx.translate(boss.x, boss.y);
 
-            // Thân / Váy hồng đặc trưng
             ctx.fillStyle = '#ec4899';
             ctx.beginPath();
             ctx.ellipse(0, 0, boss.radiusX, boss.radiusY, 0, 0, Math.PI * 2);
@@ -216,24 +206,20 @@
             ctx.strokeStyle = '#fff';
             ctx.stroke();
 
-            // Tóc và lô cuốn tóc kinh điển
             ctx.fillStyle = '#451a03';
             ctx.beginPath();
             ctx.arc(0, -25, 16, Math.PI, 0, false);
             ctx.fill();
 
-            // Lô cuốn tóc màu hồng trên đầu
             ctx.fillStyle = '#f472b6';
             ctx.fillRect(-8, -38, 7, 10);
             ctx.fillRect(2, -38, 7, 10);
 
-            // Gậy chỉ thị / Cây chổi trên tay
             ctx.fillStyle = '#9333ea';
             ctx.fillRect(15, -10, 5, 35);
 
             ctx.restore();
 
-            // Màn hình Game Over
             if (gameState === 'GAMEOVER') {
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -264,8 +250,10 @@
     </script>
 </body>
 </html>
+"""
 
-
+# Hiển thị game chuẩn xác trên Streamlit
+components.html(game_html, height=500)
 
 
 
