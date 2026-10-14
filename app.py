@@ -1,4 +1,4 @@
-mport random
+import random
 import streamlit as st
 
 st.set_page_config(
