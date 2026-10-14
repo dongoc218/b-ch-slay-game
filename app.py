@@ -1,4 +1,4 @@
-import random
+mport random
 import streamlit as st
 
 st.set_page_config(
@@ -232,3 +232,16 @@ with restart:
 
 st.markdown("---")
 st.markdown('<p class="small-note">Bản thử nghiệm 2D trên Streamlit. Muốn đồ họa 3D thật sự như game mẫu, cần làm thêm bằng một game engine như Godot hoặc Unity.</p>', unsafe_allow_html=True)
+Đã gửi
+Soạn
+Viết cho An Nguyễn Nguyễn
+
+
+An Nguyễn Nguyễn
+Đang hoạt động
+Mẹ❤️
+an.nguyen.nguyen.808592
+Đang hoạt động
+Trang cá nhân
+Bật lại
+Tìm kiếm
