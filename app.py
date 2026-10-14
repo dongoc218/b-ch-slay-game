@@ -1,943 +1,148 @@
-html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stealth Office Escape</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600;800&display=swap');
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0f172a;
-            color: #f8fafc;
-            overflow: hidden;
-            touch-action: none;
-        }
-        .pixel-font {
-            font-family: 'Press Start 2P', monospace;
-        }
-        canvas {
-            display: block;
-            image-rendering: pixelated;
-        }
-    </style>
-</head>
-<body class="w-screen h-screen flex flex-col justify-between items-center select-none bg-slate-950">
 
-    <header class="w-full max-w-5xl flex justify-between items-center px-4 py-3 bg-slate-900/80 border-b border-slate-800 backdrop-blur-md z-10 shadow-lg">
-        <div class="flex items-center space-x-3">
-            <div class="w-3 h-3 rounded-full bg-red-500 animate-ping"></div>
-            <h1 class="pixel-font text-xs sm:text-sm text-amber-400 tracking-wider">OFFICE STEALTH 2.5D</h1>
-        </div>
-        <div class="flex items-center space-x-6 text-xs sm:text-sm font-semibold">
-            <div class="flex items-center space-x-2 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
-                <span class="text-slate-400">Items:</span>
-                <span id="scoreVal" class="text-emerald-400 pixel-font">0/3</span>
-            </div>
-            <div class="flex items-center space-x-2 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
-                <span class="text-slate-400">Alert:</span>
-                <span id="alertVal" class="text-blue-400 pixel-font">STABLE</span>
-            </div>
-        </div>
-    </header>
+        
+ 
+import streamlit as st
+import streamlit.components.v1 as components
 
-    <main class="relative flex-1 w-full max-w-5xl flex items-center justify-center p-2">
-        <div class="relative rounded-2xl overflow-hidden shadow-2xl border-4 border-slate-800 bg-slate-900 w-full h-full max-h-[750px] flex items-center justify-center">
-            <canvas id="gameCanvas" class="w-full h-full object-cover"></canvas>
+# Cấu hình trang Streamlit
+st.set_page_config(page_title="Office Stealth 2.5D", layout="wide")
 
-            <div id="overlay" class="absolute inset-0 bg-slate-950/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center z-20">
-                <div class="max-w-md w-full bg-slate-900 border border-slate-700 p-8 rounded-3xl shadow-2xl space-y-6">
-                    <div class="w-16 h-16 bg-blue-600/20 text-blue-400 rounded-2xl flex items-center justify-center mx-auto border border-blue-500/30 text-2xl font-bold">
-                        🕵️‍♂️
-                    </div>
-                    <div>
-                        <h2 id="overlayTitle" class="pixel-font text-lg sm:text-xl text-white mb-2">STEALTH SURVIVAL</h2>
-                        <p id="overlayDesc" class="text-xs sm:text-sm text-slate-400 leading-relaxed">
-                            Collect 3 office items (Laptop, Briefcase, Golden Trophy) and sneak to the Exit Door! Avoid the Boss Lady in pink with rollers!
-                        </p>
-                    </div>
-                    <div class="bg-slate-800/60 p-4 rounded-xl text-left text-xs space-y-2 text-slate-300 border border-slate-700/50">
-                        <p>💻 <b>Controls:</b> Arrow Keys / WASD or Virtual D-Pad</p>
-                        <p>🔴 <b>Stealth:</b> Hide behind desks & plants to lose aggro</p>
-                    </div>
-                    <button id="startBtn" class="w-full py-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 pixel-font text-xs sm:text-sm rounded-xl font-extrabold shadow-lg shadow-amber-500/20 transition-all transform active:scale-95">
-                        START MISSION
-                    </button>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <footer class="w-full max-w-5xl flex justify-between items-center px-4 py-3 bg-slate-900/80 border-t border-slate-800 backdrop-blur-md z-10">
-        <div class="text-[10px] sm:text-xs text-slate-500 hidden sm:block">
-            Use WASD / Arrow Keys or On-Screen D-Pad
-        </div>
-        <div class="flex items-center space-x-2 sm:hidden mx-auto">
-            <div class="grid grid-cols-3 gap-1 w-32 h-24">
-                <div></div>
-                <button id="btnUp" class="bg-slate-800 active:bg-slate-700 border border-slate-700 rounded-lg flex items-center justify-center text-white text-xs">▲</button>
-                <div></div>
-                <button id="btnLeft" class="bg-slate-800 active:bg-slate-700 border border-slate-700 rounded-lg flex items-center justify-center text-white text-xs">◀</button>
-                <button id="btnDown" class="bg-slate-800 active:bg-slate-700 border border-slate-700 rounded-lg flex items-center justify-center text-white text-xs">▼</button>
-                <button id="btnRight" class="bg-slate-800 active:bg-slate-700 border border-slate-700 rounded-lg flex items-center justify-center text-white text-xs">▶</button>
-            </div>
-        </div>
-        <div class="text-[10px] sm:text-xs text-slate-400 flex items-center space-x-2">
-            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-            <span>Audio Enabled</span>
-        </div>
-    </footer>
-
-    <script>
-        // --- SOUND ENGINE (Web Audio API) ---
-        class SoundEngine {
-            constructor() {
-                this.ctx = null;
-            }
-            init() {
-                if (!this.ctx) {
-                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-                }
-                if (this.ctx.state === 'suspended') {
-                    this.ctx.resume();
-                }
-            }
-            playBeep(freq, duration, type = 'sine', gainVal = 0.1) {
-                this.init();
-                if (!this.ctx) return;
-                try {
-                    const osc = this.ctx.createOscillator();
-                    const gain = this.ctx.createGain();
-                    osc.type = type;
-                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-                    gain.gain.setValueAtTime(gainVal, this.ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
-                    osc.connect(gain);
-                    gain.connect(this.ctx.destination);
-                    osc.start();
-                    osc.stop(this.ctx.currentTime + duration);
-                } catch(e) {}
-            }
-            playCollect() {
-                this.playBeep(523.25, 0.1, 'triangle', 0.15);
-                setTimeout(() => this.playBeep(659.25, 0.15, 'triangle', 0.15), 100);
-            }
-            playAlert() {
-                this.playBeep(220, 0.2, 'sawtooth', 0.2);
-                setTimeout(() => this.playBeep(180, 0.3, 'sawtooth', 0.2), 150);
-            }
-            playWin() {
-                [440, 554.37, 659.25, 880].forEach((f, i) => {
-                    setTimeout(() => this.playBeep(f, 0.2, 'sine', 0.15), i * 120);
-                });
-            }
-            playLose() {
-                [300, 250, 200, 150].forEach((f, i) => {
-                    setTimeout(() => this.playBeep(f, 0.25, 'sawtooth', 0.2), i * 150);
-                });
-            }
-        }
-
-        const soundFX = new SoundEngine();
-
-        // --- GAME MAP & CONFIG ---
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-
-        const MAP_WIDTH = 1200;
-        const MAP_HEIGHT = 800;
-
-        canvas.width = MAP_WIDTH;
-        canvas.height = MAP_HEIGHT;
-
-        let gameState = 'START'; // START, PLAYING, GAMEOVER, WIN
-        let score = 0;
-        let alertLevel = 'STABLE'; // STABLE, CAUTION, CHASE
-        let alertTimer = 0;
-
-        // Player (Blue Hoodie & Red Hat)
-        const player = {
-            x: 100,
-            y: 100,
-            radius: 18,
-            speed: 3.5,
-            vx: 0,
-            vy: 0,
-            hidden: false
-        };
-
-        // Boss Lady (Pink dress, rollers, stick)
-        const boss = {
-            x: 1000,
-            y: 700,
-            radius: 20,
-            speed: 2.2,
-            patrolTarget: { x: 1000, y: 700 },
-            patrolTimer: 0,
-            visionRange: 220,
-            visionAngle: Math.PI / 2
-        };
-
-        // Obstacles / Desks / Cabinets (Collisions & Hiding spots)
-        const obstacles = [
-            // Desks block movement & provide cover
-            { x: 250, y: 150, w: 220, h: 90, type: 'desk' },
-            { x: 700, y: 150, w: 220, h: 90, type: 'desk' },
-            { x: 250, y: 400, w: 220, h: 90, type: 'desk' },
-            { x: 700, y: 400, w: 220, h: 90, type: 'desk' },
-            // File cabinets (tall cover)
-            { x: 100, y: 150, w: 70, h: 180, type: 'cabinet' },
-            { x: 1030, y: 400, w: 70, h: 180, type: 'cabinet' },
-            // Plant dividers
-            { x: 520, y: 280, w: 160, h: 60, type: 'plant' }
-        ];
-
-        // Collectibles (Laptop, Briefcase, Golden Trophy)
-        let collectibles = [
-            { x: 350, y: 190, r: 14, type: 'laptop', collected: false, name: 'Work Laptop' },
-            { x: 800, y: 440, r: 14, type: 'briefcase', collected: false, name: 'Secret Briefcase' },
-            { x: 1060, y: 180, r: 16, type: 'trophy', collected: false, name: 'Golden Trophy' }
-        ];
-
-        // Exit Door
-        const exitDoor = { x: 580, y: 20, w: 80, h: 40, open: false };
-
-        // Particles
-        let particles = [];
-
-        // Input Handling
-        const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowLeft: false, ArrowDown: false, ArrowRight: false };
-
-        window.addEventListener('keydown', (e) => {
-            if (keys.hasOwnProperty(e.key) || keys.hasOwnProperty(e.code)) {
-                keys[e.key] = true;
-                keys[e.code] = true;
-            }
-        });
-        window.addEventListener('keyup', (e) => {
-            if (keys.hasOwnProperty(e.key) || keys.hasOwnProperty(e.code)) {
-                keys[e.key] = false;
-                keys[e.code] = false;
-            }
-        });
-
-        // Touch buttons
-        const bindTouch = (id, keyName) => {
-            const el = document.getElementById(id);
-            if (!el) return;
-            el.addEventListener('touchstart', (e) => { e.preventDefault(); keys[keyName] = true; });
-            el.addEventListener('touchend', (e) => { e.preventDefault(); keys[keyName] = false; });
-        };
-        bindTouch('btnUp', 'ArrowUp');
-        bindTouch('btnDown', 'ArrowDown');
-        bindTouch('btnLeft', 'ArrowLeft');
-        bindTouch('btnRight', 'ArrowRight');
-
-        // --- COLLISION UTILS ---
-        function checkRectCollision(nx, ny, r, rect) {
-            let closestX = Math.max(rect.x, Math.min(nx, rect.x + rect.w));
-            let closestY = Math.max(rect.y, Math.min(ny, rect.y + rect.h));
-            let distX = nx - closestX;
-            let distY = ny - closestY;
-            return (distX * distX + distY * distY) < (r * r);
-        }
-
-        function resolveCollisions(entity) {
-            for (let obs of obstacles) {
-                // If entity is behind desk/plant, check if hiding is active
-                if (checkRectCollision(entity.x, entity.y, entity.radius, obs)) {
-                    // Push out or check cover
-                    let cx = obs.x + obs.w / 2;
-                    let cy = obs.y + obs.h / 2;
-                    // Simple pushback resolution
-                    let dx = entity.x - cx;
-                    let dy = entity.y - cy;
-                    let angle = Math.atan2(dy, dx);
-                    entity.x += Math.cos(angle) * 1.5;
-                    entity.y += Math.sin(angle) * 1.5;
-                }
-            }
-
-            // Map boundaries
-            entity.x = Math.max(entity.radius + 20, Math.min(MAP_WIDTH - entity.radius - 20, entity.x));
-            entity.y = Math.max(entity.radius + 20, Math.min(MAP_HEIGHT - entity.radius - 20, entity.y));
-        }
-
-        // --- UPDATE GAME LOGIC ---
-        function updateGame() {
-            if (gameState !== 'PLAYING') return;
-
-            // Player Movement
-            let dx = 0, dy = 0;
-            if (keys['w'] || keys['W'] || keys['ArrowUp']) dy -= 1;
-            if (keys['s'] || keys['S'] || keys['ArrowDown']) dy += 1;
-            if (keys['a'] || keys['A'] || keys['ArrowLeft']) dx -= 1;
-            if (keys['d'] || keys['D'] || keys['ArrowRight']) dx += 1;
-
-            if (dx !== 0 && dy !== 0) {
-                dx *= 0.7071;
-                dy *= 0.7071;
-            }
-
-            player.vx = dx * player.speed;
-            player.vy = dy * player.speed;
-            player.x += player.vx;
-            player.y += player.vy;
-
-            resolveCollisions(player);
-
-            // Check Hiding Behind Obstacles (Desks or Plants)
-            player.hidden = false;
-            for (let obs of obstacles) {
-                if (obs.type === 'desk' || obs.type === 'plant') {
-                    // If player is directly "above" or behind desk relative to boss or inside bounds
-                    if (player.x > obs.x && player.x < obs.x + obs.w && player.y > obs.y - 15 && player.y < obs.y + obs.h + 10) {
-                        player.hidden = true;
-                        break;
-                    }
-                }
-            }
-
-            // Collectibles Check
-            collectibles.forEach(item => {
-                if (!item.collected) {
-                    let dist = Math.hypot(player.x - item.x, player.y - item.y);
-                    if (dist < player.radius + item.r) {
-                        item.collected = true;
-                        score++;
-                        soundFX.playCollect();
-                        document.getElementById('scoreVal').innerText = ${score}/3;
-                        if (score >= 3) {
-                            exitDoor.open = true;
-                        }
-                    }
-                }
-            });
-
-            // Exit Check
-            if (exitDoor.open) {
-                if (player.x > exitDoor.x && player.x < exitDoor.x + exitDoor.w && player.y < exitDoor.y + exitDoor.h + 10) {
-                    gameState = 'WIN';
-                    soundFX.playWin();
-                    showOverlay('MISSION ACCOMPLISHED!', 'You successfully stole the office assets and escaped undetected!', 'PLAY AGAIN');
-                }
-            }
-
-            // Boss AI & Pathfinding
-            let distToPlayer = Math.hypot(boss.x - player.x, boss.y - player.y);
-            let canSeePlayer = false;
-
-            if (distToPlayer < boss.visionRange && !player.hidden) {
-                // Line of sight check
-                canSeePlayer = true;
-            }
-
-            if (canSeePlayer) {
-                alertLevel = 'CHASE';
-                alertTimer = 120; // stay alert for a bit
-                let angleToPlayer = Math.atan2(player.y - boss.y, player.x - boss.x);
-                boss.x += Math.cos(angleToPlayer) * boss.speed * 1.3;
-                boss.y += Math.sin(angleToPlayer) * boss.speed * 1.3;
-
-                if (Math.random() < 0.05) soundFX.playAlert();
-            } else {
-                if (alertTimer > 0) {
-                    alertTimer--;
-                    alertLevel = 'CAUTION';
-                    // Search towards last player position
-                    let angle = Math.atan2(player.y - boss.y, player.x - boss.x);
-                    boss.x += Math.cos(angle) * (boss.speed * 0.8);
-                    boss.y += Math.sin(angle) * (boss.speed * 0.8);
-                } else {
-                    alertLevel = 'STABLE';
-                    // Patrol around office
-                    boss.patrolTimer--;
-                    if (boss.patrolTimer <= 0) {
-                        boss.patrolTarget = {
-                            x: 200 + Math.random() * 800,
-                            y: 150 + Math.random() * 500
-                        };
-                        boss.patrolTimer = 180 + Math.random() * 200;
-                    }
-                    let pAngle = Math.atan2(boss.patrolTarget.y - boss.y, boss.patrolTarget.x - boss.x);
-                    boss.x += Math.cos(pAngle) * boss.speed * 0.6;
-                    boss.y += Math.sin(pAngle) * boss.speed * 0.6;
-                }
-            }
-
-            document.getElementById('alertVal').innerText = alertLevel;
-            document.getElementById('alertVal').className = pixel-font ${alertLevel === 'CHASE' ? 'text-red-500 animate-pulse' : alertLevel === 'CAUTION' ? 'text-amber-400' : 'text-emerald-400'};
-
-            // Catch Player check
-            if (distToPlayer < player.radius + boss.radius - 5) {
-                gameState = 'GAMEOVER';
-                soundFX.playLose();
-                showOverlay('CAUGHT BY THE BOSS!', 'The Boss Lady caught you slacking and hit you with her wooden stick!', 'TRY AGAIN');
-            }
-
-            // Particle updates
-            particles.forEach((p, index) => {
-                p.x += p.vx;
-                p.y += p.vy;
-                p.life--;
-                if (p.life <= 0) particles.splice(index, 1);
-            });
-        }
-
-        // --- RENDER GAME GRAPHICS (2.5D Retro-Modern Isometric style) ---
-        function drawGame() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // 1. Office Floor Tile Pattern
-            ctx.fillStyle = '#1e293b';
-            ctx.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
-
-            ctx.strokeStyle = '#334155';
-            ctx.lineWidth = 1;
-            const tileSize = 50;
-            for (let x = 0; x < MAP_WIDTH; x += tileSize) {
-                ctx.beginPath();
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x, MAP_HEIGHT);
-                ctx.stroke();
-            }
-            for (let y = 0; y < MAP_HEIGHT; y += tileSize) {
-                ctx.beginPath();
-                ctx.moveTo(0, y);
-                ctx.lineTo(MAP_WIDTH, y);
-                ctx.stroke();
-            }
-
-            // 2. Office Exit Door
-            ctx.fillStyle = exitDoor.open ? '#10b981' : '#64748b';
-            ctx.fillRect(exitDoor.x, exitDoor.y, exitDoor.w, exitDoor.h);
-            ctx.fillStyle = '#ffffff';
-            ctx.font = '10px "Press Start 2P"';
-            ctx.textAlign = 'center';
-            ctx.fillText(exitDoor.open ? 'EXIT (OPEN)' : 'EXIT (LOCKED)', exitDoor.x + exitDoor.w/2, exitDoor.y - 8);
-
-            // 3. Collectibles
-            collectibles.forEach(item => {
-                if (!item.collected) {
-                    ctx.save();
-                    ctx.shadowColor = '#fbbf24';
-                    ctx.shadowBlur = 10;
-                    ctx.fillStyle = item.type === 'laptop' ? '#38bdf8' : item.type === 'briefcase' ? '#fb923c' : '#facc15';
-                    ctx.beginPath();
-                    ctx.arc(item.x, item.y, item.r, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.strokeStyle = '#ffffff';
-                    ctx.lineWidth = 2;
-                    ctx.stroke();
-                    ctx.restore();
-
-                    // Icon/Emoji inside
-                    ctx.font = '14px sans-serif';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    let icon = item.type === 'laptop' ? '💻' : item.type === 'briefcase' ? '💼' : '🏆';
-                    ctx.fillText(icon, item.x, item.y);
-                }
-            });
-
-            // 4. Obstacles (Desks, Cabinets, Plants with 2.5D depth shadow)
-            obstacles.forEach(obs => {
-                // Drop shadow
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-                ctx.fillRect(obs.x + 8, obs.y + 8, obs.w, obs.h);
-
-                if (obs.type === 'desk') {
-                    ctx.fillStyle = '#475569';
-                    ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
-                    ctx.fillStyle = '#64748b';
-                    ctx.fillRect(obs.x + 6, obs.y + 6, obs.w - 12, obs.h - 12);
-                    // Desk items mockup
-                    ctx.fillStyle = '#cbd5e1';
-                    ctx.fillRect(obs.x + 20, obs.y + 20, 25, 18); // monitor
-                } else if (obs.type === 'cabinet') {
-                    ctx.fillStyle = '#334155';
-                    ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
-                    ctx.fillStyle = '#475569';
-                    ctx.strokeRect(obs.x + 5, obs.y + 5, obs.w - 10, obs.h - 10);
-                } else if (obs.type === 'plant') {
-                    ctx.fillStyle = '#0f766e';
-                    ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
-                    ctx.fillStyle = '#14b8a6';
-                    ctx.beginPath();
-                    ctx.arc(obs.x + obs.w/2, obs.y + obs.h/2, 25, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-            });
-
-            // 5. Player (Blue Hoodie & Red Hat)
-            ctx.save();
-            if (player.hidden) ctx.globalAlpha = 0.5;
-
-            // Player shadow
-            ctx.fillStyle = 'rgba(0,0,0,0.3)';
-            ctx.beginPath();
-            ctx.arc(player.x, player.y + 12, player.radius * 0.8, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Hoodie Body (Blue)
-            ctx.fillStyle = '#2563eb';
-            ctx.beginPath();
-            ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = '#1d4ed8';
-            ctx.lineWidth = 3;
-            ctx.stroke();
-
-            // Red Hat
-            ctx.fillStyle = '#dc2626';
-            ctx.beginPath();
-            ctx.arc(player.x, player.y - 4, player.radius * 0.65, Math.PI, 0, false);
-            ctx.fill();
-
-            ctx.restore();
-
-            // 6. Boss Lady (Pink Dress, Hair Rollers, Stick)
-            ctx.save();
-            // Boss Vision Cone
-            if (alertLevel === 'CHASE') {
-                ctx.fillStyle = 'rgba(239, 68, 68, 0.2)';
-            } else if (alertLevel === 'CAUTION') {
-                ctx.fillStyle = 'rgba(245, 158, 11, 0.15)';
-            } else {
-                ctx.fillStyle = 'rgba(59, 130, 246, 0.1)';
-            }
-            ctx.beginPath();
-            let bAngle = Math.atan2(player.y - boss.y, player.x - boss.x);
-            ctx.arc(boss.x, boss.y, boss.visionRange, bAngle - 0.6, bAngle + 0.6);
-            ctx.lineTo(boss.x, boss.y);
-            ctx.fill();
-
-            // Boss Body (Pink Dress)
-            ctx.fillStyle = '#ec4899';
-            ctx.beginPath();
-            ctx.arc(boss.x, boss.y, boss.radius, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = '#be185d';
-            ctx.lineWidth = 3;
-            ctx.stroke();
-
-            // Hair Rollers / Angry Face
-            ctx.fillStyle = '#fbcfe8';
-            ctx.beginPath();
-            ctx.arc(boss.x - 8, boss.y - 8, 6, 0, Math.PI * 2);
-            ctx.arc(boss.x + 8, boss.y - 8, 6, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Wooden Stick
-            ctx.strokeStyle = '#92400e';
-            ctx.lineWidth = 4;
-            ctx.beginPath();
-            ctx.moveTo(boss.x + 15, boss.y);
-            ctx.lineTo(boss.x + 35, boss.y - 15);
-            ctx.stroke();
-
-            ctx.restore();
-        }
-
-        // --- GAME LOOP ---
-        function loop() {
-            updateGame();
-            drawGame();
-            requestAnimationFrame(loop);
-        }
-
-        // --- OVERLAY CONTROLS ---
-        function showOverlay(title, desc, btnText) {
-            document.getElementById('overlayTitle').innerText = title;
-            document.getElementById('overlayDesc').innerText = desc;
-            document.getElementById('startBtn').innerText = btnText;
-            document.getElementById('overlay').classList.remove('hidden');
-        }
-
-        function resetGame() {
-            score = 0;
-            document.getElementById('scoreVal').innerText = '0/3';
-            player.x = 100;
-            player.y = 100;
-            boss.x = 1000;
-            boss.y = 700;
-            exitDoor.open = false;
-            collectibles.forEach(item => item.collected = false);
-            gameState = 'PLAYING';
-            document.getElementById('overlay').classList.add('hidden');
-        }
-
-        document.getElementById('startBtn').addEventListener('click', () => {
-            resetGame();
-        });
-
-        // Initialize display loop
-        requestAnimationFrame(loop);
-    </script>
-</body>
-10:09
+# Nhúng toàn bộ game HTML/Canvas/JS vào Streamlit
+game_html = """
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Office Stealth - Trốn Tìm Công Sở</title>
     <style>
-        * {
-            box-sizing: border-box;
-            user-select: none;
-        }
-        body {
-            margin: 0;
-            padding: 0;
-            background: #111;
-            color: #fff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            overflow: hidden;
-        }
-        #game-container {
-            position: relative;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-            border: 4px solid #333;
-            border-radius: 8px;
-            background: #1e1e2f;
-        }
-        canvas {
-            display: block;
-            background: #222533;
-        }
-        #ui {
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            right: 15px;
-            display: flex;
-            justify-content: space-between;
-            pointer-events: none;
-            font-size: 18px;
-            font-weight: bold;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.9);
-        }
-        .badge {
-            background: rgba(0, 0, 0, 0.6);
-            padding: 8px 15px;
-            border-radius: 20px;
-            border: 1px solid rgba(255,255,255,0.2);
-        }
-        #instructions {
-            margin-top: 12px;
-            font-size: 14px;
-            color: #aaa;
-            text-align: center;
-        }
-        kbd {
-            background: #333;
-            border: 1px solid #555;
-            border-radius: 4px;
-            padding: 2px 6px;
-            font-family: monospace;
-            color: #fff;
-        }
+        body { margin: 0; background: #111; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; }
+        #game-container { position: relative; margin-top: 10px; border: 3px solid #444; border-radius: 8px; }
+        canvas { display: block; background: #222533; }
+        #ui { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; pointer-events: none; }
+        .badge { background: rgba(0,0,0,0.7); padding: 6px 12px; border-radius: 12px; font-size: 14px; font-weight: bold; }
     </style>
 </head>
 <body>
-
     <div id="game-container">
-        <canvas id="gameCanvas" width="800" height="500"></canvas>
+        <canvas id="gameCanvas" width="800" height="480"></canvas>
         <div id="ui">
-            <div class="badge" id="mission-text">Nhiệm vụ: Tìm 3 tài liệu công ty & trốn đến Cửa Thoát!</div>
-            <div class="badge" id="status-text">Trạng thái: 🏃 Đang chạy</div>
+            <div class="badge" id="mission">Nhiệm vụ: Tìm 3 vật phẩm & thoát hiểm!</div>
+            <div class="badge" id="status" style="color:#e74c3c">🏃 Đang chạy</div>
         </div>
     </div>
-    <div id="instructions">
-        Dùng các phím <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> hoặc <kbd>Mũi tên</kbd> để di chuyển. Giữ <kbd>Shift</kbd> để lén lút ẩn nấp sau bàn làm việc!
-    </div>
+    <p style="font-size:13px; color:#aaa;">Phím W A S D / Mũi tên để di chuyển | Giữ Shift để nấp sau bàn</p>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+        let gameState = 'PLAYING', itemsCollected = 0, totalItems = 3;
 
-        // Trạng thái Game
-        let gameState = 'PLAYING'; // PLAYING, WIN, GAMEOVER
-        let score = 0;
-        let itemsCollected = 0;
-        const totalItems = 3;
+        let player = { x: 80, y: 240, r: 12, speed: 3, crouchSpeed: 1.4, isCrouching: false };
+        let boss = { x: 700, y: 240, r: 16, speed: 1.7, state: 'PATROL', vision: 150, target: {x: 600, y: 100} };
+        let desks = [{x: 200, y: 100, w: 90, h: 60}, {x: 200, y: 300, w: 90, h: 60}, {x: 450, y: 180, w: 90, h: 100}];
+        let items = [{x: 245, y: 70, c: false}, {x: 495, y: 320, c: false}, {x: 720, y: 400, c: false}];
+        let exit = {x: 750, y: 30, w: 35, h: 50};
 
-        // Người chơi (Nhân viên áo xanh mũ đỏ)
-        let player = {
-            x: 100,
-            y: 250,
-            radius: 14,
-            speed: 3.2,
-            crouchSpeed: 1.5,
-            isCrouching: false,
-            color: '#3498db',
-            hatColor: '#e74c3c'
-        };
-
-        // Bà chủ (Boss mặc váy hồng cầm gậy)
-        let boss = {
-            x: 680,
-            y: 250,
-            radius: 18,
-            speed: 1.8,
-            state: 'PATROL', // PATROL, CHASE
-            patrolTarget: {x: 680, y: 100},
-            visionRange: 160
-        };
-
-        // Danh sách bàn làm việc (Vật cản & chỗ nấp)
-        let desks = [
-            {x: 220, y: 120, w: 100, h: 60},
-            {x: 220, y: 320, w: 100, h: 60},
-            {x: 450, y: 100, w: 100, h: 60},
-            {x: 450, y: 340, w: 100, h: 60}
-        ];
-
-        // Vật phẩm cần thu thập (Tài liệu/Hồ sơ)
-        let items = [
-            {x: 270, y: 80, collected: false, icon: '📁'},
-            {x: 500, y: 430, collected: false, icon: '💼'},
-            {x: 720, y: 400, collected: false, icon: '👑'}
-        ];
-
-        // Cửa thoát hiểm
-        let exitDoor = {x: 750, y: 50, w: 35, h: 55};
-
-        // Điều khiển bàn phím
         let keys = {};
-        window.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true; });
-        window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
+        window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+        window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
         function update() {
             if (gameState !== 'PLAYING') return;
-
-            // Xử lý nấp (Shift)
             player.isCrouching = keys['shift'] || false;
-            let currentSpeed = player.isCrouching ? player.crouchSpeed : player.speed;
+            let spd = player.isCrouching ? player.crouchSpeed : player.speed;
 
-            // Di chuyển người chơi
             let dx = 0, dy = 0;
-            if (keys['w'] || keys['arrowup']) dy -= currentSpeed;
-            if (keys['s'] || keys['arrowdown']) dy += currentSpeed;
-            if (keys['a'] || keys['arrowleft']) dx -= currentSpeed;
-            if (keys['d'] || keys['arrowright']) dx += currentSpeed;
+            if (keys['w'] || keys['arrowup']) dy -= spd;
+            if (keys['s'] || keys['arrowdown']) dy += spd;
+            if (keys['a'] || keys['arrowleft']) dx -= spd;
+            if (keys['d'] || keys['arrowright']) dx += spd;
 
-            // Kiểm tra va chạm với bàn làm việc
-            player.x += dx;
-            if (checkDeskCollision(player)) player.x -= dx;
-            player.y += dy;
-            if (checkDeskCollision(player)) player.y -= dy;
+            player.x += dx; if (checkDesk(player)) player.x -= dx;
+            player.y += dy; if (checkDesk(player)) player.y -= dy;
 
-            // Giới hạn trong khung hình
-            player.x = Math.max(player.radius, Math.min(canvas.width - player.radius, player.x));
-            player.y = Math.max(player.radius, Math.min(canvas.height - player.radius, player.y));
+            player.x = Math.max(15, Math.min(canvas.width - 15, player.x));
+            player.y = Math.max(15, Math.min(canvas.height - 15, player.y));
 
-            // Thu thập vật phẩm
-            items.forEach(item => {
-                if (!item.collected) {
-                    let dist = Math.hypot(player.x - item.x, player.y - item.y);
-                    if (dist < player.radius + 15) {
-                        item.collected = true;
-                        itemsCollected++;
-                        score += 100;
-                        updateUI();
-                    }
+            items.forEach(it => {
+                if (!it.c && Math.hypot(player.x - it.x, player.y - it.y) < 25) {
+                    it.c = true; itemsCollected++;
+                    document.getElementById('mission').innerText = Nhiệm vụ: Lấy vật phẩm (${itemsCollected}/${totalItems});
                 }
             });
 
-            // Kiểm tra chiến thắng (Đủ đồ & tới cửa)
-            if (itemsCollected >= totalItems) {
-                let distToExit = Math.hypot(player.x - (exitDoor.x + exitDoor.w/2), player.y - (exitDoor.y + exitDoor.h/2));
-                if (distToExit < 30) {
-                    gameState = 'WIN';
-                }
+            if (itemsCollected >= totalItems && Math.hypot(player.x - (exit.x + 15), player.y - (exit.y + 25)) < 30) {
+                gameState = 'WIN';
             }
 
-            // AI Bà chủ (Boss)
-            let distToBoss = Math.hypot(boss.x - player.x, boss.y - player.y);
-            
-            // Nếu người chơi không nấp và nằm trong tầm nhìn của boss -> Bị phát hiện (Truy đuổi)
-            if (distToBoss < boss.visionRange && !player.isCrouching) {
-                boss.state = 'CHASE';
-            } else if (distToBoss > boss.visionRange * 1.5) {
-                boss.state = 'PATROL';
-            }
+            let dist = Math.hypot(boss.x - player.x, boss.y - player.y);
+            if (dist < boss.vision && !player.isCrouching) boss.state = 'CHASE';
+            else if (dist > boss.vision * 1.4) boss.state = 'PATROL';
 
             if (boss.state === 'CHASE') {
-                // Đuổi theo player
                 let angle = Math.atan2(player.y - boss.y, player.x - boss.x);
                 boss.x += Math.cos(angle) * boss.speed;
                 boss.y += Math.sin(angle) * boss.speed;
-
-                // Bắt được player
-                if (distToBoss < player.radius + boss.radius - 5) {
-                    gameState = 'GAMEOVER';
-                }
+                if (dist < player.r + boss.r) gameState = 'GAMEOVER';
             } else {
-                // Đi tuần tra quanh văn phòng
-                let targetDist = Math.hypot(boss.patrolTarget.x - boss.x, boss.patrolTarget.y - boss.y);
-                if (targetDist < 10) {
-                    // Đổi điểm tuần tra ngẫu nhiên
-                    boss.patrolTarget = {
-                        x: Math.random() * 400 + 350,
-                        y: Math.random() * 350 + 70
-                    };
-                }
-                let angle = Math.atan2(boss.patrolTarget.y - boss.y, boss.patrolTarget.x - boss.x);
-                boss.x += Math.cos(angle) * (boss.speed * 0.7);
-                boss.y += Math.sin(angle) * (boss.speed * 0.7);
+                let tDist = Math.hypot(boss.target.x - boss.x, boss.target.y - boss.y);
+                if (tDist < 10) boss.target = { x: Math.random() * 400 + 350, y: Math.random() * 350 + 50 };
+                let angle = Math.atan2(boss.target.y - boss.y, boss.target.x - boss.x);
+                boss.x += Math.cos(angle) * (boss.speed * 0.6);
+                boss.y += Math.sin(angle) * (boss.speed * 0.6);
             }
+
+            let st = document.getElementById('status');
+            if (player.isCrouching) { st.innerText = '🤫 Đang ẩn nấp'; st.style.color = '#2ecc71'; }
+            else { st.innerText = '🏃 Đang chạy'; st.style.color = '#e74c3c'; }
         }
 
-        function checkDeskCollision(entity) {
-            for (let desk of desks) {
-                if (entity.x + entity.radius > desk.x &&
-                    entity.x - entity.radius < desk.x + desk.w &&
-                    entity.y + entity.radius > desk.y &&
-                    entity.y - entity.radius < desk.y + desk.h) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        function updateUI() {
-            let statusEl = document.getElementById('status-text');
-            let missionEl = document.getElementById('mission-text');
-
-            if (itemsCollected >= totalItems) {
-                missionEl.innerText = "Nhiệm vụ: Đã lấy đủ đồ! Chạy ngay đến Cửa Xanh!";
-            } else {
-                missionEl.innerText = Nhiệm vụ: Lấy tài liệu (${itemsCollected}/${totalItems}) & trốn bà chủ!;
-            }
-
-            if (player.isCrouching) {
-                statusEl.innerText = "Trạng thái: 🤫 Đang ẩn nấp";
-                statusEl.style.color = "#2ecc71";
-            } else {
-                statusEl.innerText = "Trạng thái: 🏃 Đang chạy";
-                statusEl.style.color = "#e74c3c";
-            }
+        function checkDesk(p) {
+            return desks.some(d => p.x + p.r > d.x && p.x - p.r < d.x + d.w && p.y + p.r > d.y && p.y - p.r < d.y + d.h);
         }
 
         function draw() {
-            // Xóa màn hình canvas phong cách văn phòng hiện đại
-            ctx.fillStyle = '#222533';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Vẽ thảm văn phòng họa tiết nhẹ
-            ctx.strokeStyle = '#2a2e43';
-            ctx.lineWidth = 1;
-            for(let i=0; i<canvas.width; i+=40) {
-                ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); ctx.stroke();
-            }
-
-            // Vẽ Cửa Thoát Hiểm (Exit Door)
+            ctx.fillStyle = '#222533'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Cửa thoát
             ctx.fillStyle = itemsCollected >= totalItems ? '#2ecc71' : '#555';
-            ctx.fillRect(exitDoor.x, exitDoor.y, exitDoor.w, exitDoor.h);
-            ctx.fillStyle = '#fff';
-            ctx.font = '10px Arial';
-            ctx.fillText("EXIT", exitDoor.x + 6, exitDoor.y + 32);
+            ctx.fillRect(exit.x, exit.y, exit.w, exit.h);
 
-            // Vẽ bàn làm việc (Văn phòng 3D mô phỏng)
-            desks.forEach(desk => {
-                // Đổ bóng bàn
-                ctx.fillStyle = 'rgba(0,0,0,0.4)';
-                ctx.fillRect(desk.x + 5, desk.y + 5, desk.w, desk.h);
-                // Mặt bàn
-                ctx.fillStyle = '#5c4033';
-                ctx.fillRect(desk.x, desk.y, desk.w, desk.h);
-                ctx.fillStyle = '#795548';
-                ctx.fillRect(desk.x + 4, desk.y + 4, desk.w - 8, desk.h - 8);
-                // Máy tính trên bàn
-                ctx.fillStyle = '#333';
-                ctx.fillRect(desk.x + 35, desk.y + 15, 30, 20);
+            // Bàn làm việc
+            desks.forEach(d => {
+                ctx.fillStyle = '#5c4033'; ctx.fillRect(d.x, d.y, d.w, d.h);
+                ctx.fillStyle = '#333'; ctx.fillRect(d.x + 25, d.y + 15, 30, 20);
             });
 
-            // Vẽ vật phẩm
-            items.forEach(item => {
-                if (!item.collected) {
-                    ctx.font = '20px Arial';
-                    ctx.fillText(item.icon, item.x - 10, item.y + 7);
-                }
-            });
+            // Vật phẩm
+            items.forEach(it => { if(!it.c) { ctx.fillStyle = '#f1c40f'; ctx.beginPath(); ctx.arc(it.x, it.y, 8, 0, Math.PI*2); ctx.fill(); }});
 
-            // Vẽ nhân viên (Player)
-            ctx.save();
-            ctx.beginPath();
-            ctx.arc(player.x, player.y, player.isCrouching ? player.radius * 0.7 : player.radius, 0, Math.PI * 2);
-            ctx.fillStyle = player.color;
-            ctx.fill();
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = '#fff';
-            ctx.stroke();
-            // Mũ đỏ đặc trưng
-            ctx.fillStyle = player.hatColor;
-            ctx.beginPath();
-            ctx.arc(player.x, player.y - 4, player.isCrouching ? 6 : 8, Math.PI, 0, false);
-            ctx.fill();
-            ctx.restore();
+            // Player
+            ctx.fillStyle = '#3498db'; ctx.beginPath(); ctx.arc(player.x, player.y, player.isCrouching ? 8 : 12, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#e74c3c'; ctx.beginPath(); ctx.arc(player.x, player.y - 3, 5, Math.PI, 0); ctx.fill();
 
-            // Vẽ Bà chủ (Boss)
-            ctx.save();
-            // Vùng tầm nhìn khi đi tuần
+            // Boss
             if (boss.state === 'PATROL') {
-                ctx.fillStyle = 'rgba(231, 76, 60, 0.08)';
-                ctx.beginPath();
-                ctx.arc(boss.x, boss.y, boss.visionRange, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.fillStyle = 'rgba(231, 76, 60, 0.1)';
+                ctx.beginPath(); ctx.arc(boss.x, boss.y, boss.vision, 0, Math.PI*2); ctx.fill();
             }
-            // Thân boss (Váy hồng)
-            ctx.beginPath();
-            ctx.arc(boss.x, boss.y, boss.radius, 0, Math.PI * 2);
-            ctx.fillStyle = boss.state === 'CHASE' ? '#c0392b' : '#ff69b4';
-            ctx.fill();
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = '#fff';
-            ctx.stroke();
-            // Gậy chỉ thị / Cây chổi của Boss
-            ctx.fillStyle = '#8e44ad';
-            ctx.fillRect(boss.x + 10, boss.y - 12, 4, 25);
-            ctx.restore();
+            ctx.fillStyle = boss.state === 'CHASE' ? '#e74c3c' : '#ff69b4';
+            ctx.beginPath(); ctx.arc(boss.x, boss.y, boss.r, 0, Math.PI*2); ctx.fill();
 
-            // Màn hình kết thúc (Thắng / Thua)
             if (gameState !== 'PLAYING') {
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#fff';
-                ctx.font = 'bold 32px Arial';
-                ctx.textAlign = 'center';
-                
-                if (gameState === 'WIN') {
-                    ctx.fillStyle = '#2ecc71';
-                    ctx.fillText("🎉 CHIẾN THẮNG! BẠN ĐÃ TRỐN THÀNH CÔNG!", canvas.width / 2, canvas.height / 2 - 20);
-                } else {
-                    ctx.fillStyle = '#e74c3c';
-                    ctx.fillText("💥 BỊ BÀ CHỦ TÓM GỌN!", canvas.width / 2, canvas.height / 2 - 20);
-                }
-                
-                ctx.font = '16px Arial';
-                ctx.fillStyle = '#aaa';
-                ctx.fillText("Nhấn phím F5 để chơi lại", canvas.width / 2, canvas.height / 2 + 25);
-                ctx.textAlign = 'left';
+                ctx.fillStyle = 'rgba(0,0,0,0.85)'; ctx.fillRect(0,0,canvas.width,canvas.height);
+                ctx.fillStyle = gameState === 'WIN' ? '#2ecc71' : '#e74c3c';
+                ctx.font = 'bold 28px sans-serif'; ctx.textAlign = 'center';
+                ctx.fillText(gameState === 'WIN' ? '🎉 THẮNG CỦA GAME!' : '💥 BỊ BÀ CHỦ BẮT!', canvas.width/2, canvas.height/2);
             }
         }
 
-        function gameLoop() {
-            update();
-            draw();
-            requestAnimationFrame(gameLoop);
-        }
-
-        // Khởi chạy game
-        gameLoop();
+        function loop() { update(); draw(); requestAnimationFrame(loop); }
+        loop();
     </script>
 </body>
 </html>
+"""
+
+# Hiển thị game trên giao diện Streamlit
+components.html(game_html, height=580)
+
