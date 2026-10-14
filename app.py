@@ -58,7 +58,7 @@ html lang="en">
                         </p>
                     </div>
                     <div class="bg-slate-800/60 p-4 rounded-xl text-left text-xs space-y-2 text-slate-300 border border-slate-700/50">
-                        <p>💻 <b>Controls:</b> Arrow Keys / WASD or Virtual D-Pad</p>
+                        <p>'💻' <b>Controls:</b> Arrow Keys / WASD or Virtual D-Pad</p>
                         <p>🔴 <b>Stealth:</b> Hide behind desks & plants to lose aggro</p>
                     </div>
                     <button id="startBtn" class="w-full py-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 pixel-font text-xs sm:text-sm rounded-xl font-extrabold shadow-lg shadow-amber-500/20 transition-all transform active:scale-95">
