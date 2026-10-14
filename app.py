@@ -27,7 +27,9 @@ html lang="en">
     <header class="w-full max-w-5xl flex justify-between items-center px-4 py-3 bg-slate-900/80 border-b border-slate-800 backdrop-blur-md z-10 shadow-lg">
         <div class="flex items-center space-x-3">
             <div class="w-3 h-3 rounded-full bg-red-500 animate-ping"></div>
-            <h1 class="pixel-font text-xs sm:text-sm text-amber-400 tracking-wider">OFFICE STEALTH 2.5D</h1>
+
+    '<h1 class="pixel-font text-xs sm:text-sm text-amber-400 tracking-wider">OFFICE STEALTH 2.5D</h1>',
+    unsafe_allow_html=True
         </div>
         <div class="flex items-center space-x-6 text-xs sm:text-sm font-semibold">
             <div class="flex items-center space-x-2 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
