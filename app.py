@@ -50,7 +50,7 @@ html lang="en">
             <div id="overlay" class="absolute inset-0 bg-slate-950/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center z-20">
                 <div class="max-w-md w-full bg-slate-900 border border-slate-700 p-8 rounded-3xl shadow-2xl space-y-6">
                     <div class="w-16 h-16 bg-blue-600/20 text-blue-400 rounded-2xl flex items-center justify-center mx-auto border border-blue-500/30 text-2xl font-bold">
-                      ''  🕵''
+                       ''🕵''
                     </div>
                     <div>
                         <h2 id="overlayTitle" class="pixel-font text-lg sm:text-xl text-white mb-2">STEALTH SURVIVAL</h2>
