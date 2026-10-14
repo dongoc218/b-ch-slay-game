@@ -1,3 +1,11 @@
+import streamlit as st
+import streamlit.components.v1 as components
+
+# Cấu hình trang Streamlit
+st.set_page_config(page_title="Office Escape - Slay Game 3D", layout="wide")
+
+# Toàn bộ code HTML/JS của game được bọc an toàn bên trong chuỗi Python
+game_html = """
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -78,11 +86,10 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        let gameState = 'PLAYING'; // PLAYING, WIN, GAMEOVER
+        let gameState = 'PLAYING';
         let itemsCollected = 0;
         let totalItems = 3;
 
-        // Nhân vật chính (Áo xanh, mũ đỏ)
         let player = {
             x: 100,
             y: 270,
@@ -92,35 +99,30 @@
             isCrouching: false
         };
 
-        // Bà chủ văn phòng (Váy hồng cầm gậy)
         let boss = {
             x: 780,
             y: 270,
             radius: 20,
             speed: 1.8,
-            state: 'PATROL', // PATROL, CHASE
+            state: 'PATROL',
             visionRange: 180,
             target: {x: 700, y: 120}
         };
 
-        // Các bàn làm việc trong phòng (Vật cản và chỗ nấp)
         let desks = [
             {x: 240, y: 100, w: 120, h: 75},
             {x: 240, y: 360, w: 120, h: 75},
             {x: 520, y: 200, w: 130, h: 140}
         ];
 
-        // Vật phẩm cần tìm
         let items = [
             {x: 300, y: 60, collected: false, icon: '📁'},
             {x: 585, y: 370, collected: false, icon: '💼'},
             {x: 820, y: 460, collected: false, icon: '👑'}
         ];
 
-        // Cửa thoát hiểm
         let exitDoor = {x: 830, y: 30, w: 50, h: 65};
 
-        // Xử lý bàn phím
         let keys = {};
         window.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true; });
         window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
@@ -137,17 +139,14 @@
             if (keys['a'] || keys['arrowleft']) dx -= currentSpeed;
             if (keys['d'] || keys['arrowright']) dx += currentSpeed;
 
-            // Va chạm bàn
             player.x += dx;
             if (checkDeskCollision(player)) player.x -= dx;
             player.y += dy;
             if (checkDeskCollision(player)) player.y -= dy;
 
-            // Giới hạn khung hình
             player.x = Math.max(25, Math.min(canvas.width - 25, player.x));
             player.y = Math.max(25, Math.min(canvas.height - 25, player.y));
 
-            // Nhặt vật phẩm
             items.forEach(item => {
                 if (!item.collected) {
                     let dist = Math.hypot(player.x - item.x, player.y - item.y);
@@ -159,7 +158,6 @@
                 }
             });
 
-            // Kiểm tra chiến thắng
             if (itemsCollected >= totalItems) {
                 let distToExit = Math.hypot(player.x - (exitDoor.x + exitDoor.w/2), player.y - (exitDoor.y + exitDoor.h/2));
                 if (distToExit < 40) {
@@ -167,7 +165,6 @@
                 }
             }
 
-            // AI Bà chủ (Boss)
             let distToBoss = Math.hypot(boss.x - player.x, boss.y - player.y);
             
             if (distToBoss < boss.visionRange && !player.isCrouching) {
@@ -197,7 +194,6 @@
                 boss.y += Math.sin(angle) * (boss.speed * 0.65);
             }
 
-            // Cập nhật giao diện trạng thái
             let statusEl = document.getElementById('status');
             if (player.isCrouching) {
                 statusEl.innerText = "🤫 Đang ẩn nấp";
@@ -221,11 +217,9 @@
         }
 
         function draw() {
-            // Vẽ nền phòng làm việc
             ctx.fillStyle = '#1e2235';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Vẽ lưới sàn văn phòng
             ctx.strokeStyle = '#282d4a';
             ctx.lineWidth = 1;
             for (let i = 0; i < canvas.width; i += 50) {
@@ -233,25 +227,21 @@
                 ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); ctx.stroke();
             }
 
-            // Cửa thoát hiểm (EXIT)
             ctx.fillStyle = itemsCollected >= totalItems ? '#10b981' : '#475569';
             ctx.fillRect(exitDoor.x, exitDoor.y, exitDoor.w, exitDoor.h);
             ctx.fillStyle = '#fff';
             ctx.font = 'bold 14px sans-serif';
             ctx.fillText("EXIT", exitDoor.x + 10, exitDoor.y + 38);
 
-            // Vẽ bàn làm việc
             desks.forEach(desk => {
                 ctx.fillStyle = '#78350f';
                 ctx.fillRect(desk.x, desk.y, desk.w, desk.h);
                 ctx.fillStyle = '#92400e';
                 ctx.fillRect(desk.x + 6, desk.y + 6, desk.w - 12, desk.h - 12);
-                // Màn hình máy tính trên bàn
                 ctx.fillStyle = '#334155';
                 ctx.fillRect(desk.x + desk.w/2 - 20, desk.y + 15, 40, 25);
             });
 
-            // Vẽ vật phẩm
             items.forEach(item => {
                 if (!item.collected) {
                     ctx.font = '26px sans-serif';
@@ -259,7 +249,6 @@
                 }
             });
 
-            // Vẽ nhân viên (Player - Áo xanh dương, mũ đỏ)
             ctx.save();
             let pRadius = player.isCrouching ? player.radius * 0.75 : player.radius;
             ctx.beginPath();
@@ -269,14 +258,13 @@
             ctx.lineWidth = 2.5;
             ctx.strokeStyle = '#ffffff';
             ctx.stroke();
-            // Mũ đỏ
+
             ctx.fillStyle = '#ef4444';
             ctx.beginPath();
             ctx.arc(player.x, player.y - 3, pRadius * 0.65, Math.PI, 0, false);
             ctx.fill();
             ctx.restore();
 
-            // Vẽ Bà chủ (Boss - Váy hồng)
             if (boss.state === 'PATROL') {
                 ctx.fillStyle = 'rgba(239, 68, 68, 0.08)';
                 ctx.beginPath();
@@ -291,7 +279,6 @@
             ctx.strokeStyle = '#ffffff';
             ctx.stroke();
 
-            // Màn hình Thắng / Thua
             if (gameState !== 'PLAYING') {
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -316,6 +303,10 @@
     </script>
 </body>
 </html>
+"""
+
+# Hiển thị game chuẩn trên Streamlit mà không bao giờ lỗi
+components.html(game_html, height=600)
 
 
 
