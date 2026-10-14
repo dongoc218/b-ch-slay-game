@@ -178,7 +178,7 @@ metric1.metric("Đồ đã lấy", f"{len(st.session_state.collected)}/3")
 metric2.metric("Lượt đi", st.session_state.turn)
 metric3.metric("Trạng thái", "Đang trốn 🙈" if st.session_state.hidden else ("Bị bắt 😵" if st.session_state.lost else ("Thắng 🏆" if st.session_state.won else "Cẩn thận 👀")))
 
-st.markdown(*Nhiệm vụ:** Tìm 💼, 📦 và 📁 rồi chạy đến 🚪. Bà chủ 👩🏻‍💼 sẽ đuổi theo khi bạn ở gần.")
+st.markdown("*Nhiệm vụ:* Tìm 💼, 📦 và 📁 rồi chạy đến 🚪. Bà chủ 👩🏻‍💼 sẽ đuổi theo khi bạn ở gần.")
 st.caption("🧙 Bạn  •  👩🏻‍💼 Bà chủ  •  🪴 Chướng ngại vật  •  🗄️ Chỗ trốn  •  🚪 Cửa thoát")
 st.markdown("### 🏢 Văn phòng")
 render_board()
