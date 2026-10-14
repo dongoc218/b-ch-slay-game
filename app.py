@@ -76,7 +76,7 @@ html lang="en">
         <div class="flex items-center space-x-2 sm:hidden mx-auto">
             <div class="grid grid-cols-3 gap-1 w-32 h-24">
                 <div></div>
-                <button id="btnUp" class="bg-slate-800 active:bg-slate-700 border border-slate-700 rounded-lg flex items-center justify-center text-white text-xs'▲'button>
+                <button id="btnUp" class="bg-slate-800 active:bg-slate-700 border border-slate-700 rounded-lg flex items-center justify-center text-white text-xs'''▲'button>
                 <div></div>
                 <button id="btnLeft" class="bg-slate-800 active:bg-slate-700 border border-slate-700 rounded-lg flex items-center justify-center text-white text-xs">◀</button>
                 <button id="btnDown" class="bg-slate-800 active:bg-slate-700 border border-slate-700 rounded-lg flex items-center justify-center text-white text-xs">▼</button>
