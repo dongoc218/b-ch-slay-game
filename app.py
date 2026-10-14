@@ -40,7 +40,7 @@ div.stButton > button:hover {border-color:#c026d3; color:#a21caf;}
 
 ROWS, COLS = 8, 9
 START_PLAYER = (7, 0)
-START_BOSS = (0, 😎
+START_BOSS = (0,8)
 EXIT = (0, 0)
 WALLS = {
     (1, 1), (1, 2), (1, 6), (1, 7),
@@ -232,16 +232,4 @@ with restart:
 
 st.markdown("---")
 st.markdown('<p class="small-note">Bản thử nghiệm 2D trên Streamlit. Muốn đồ họa 3D thật sự như game mẫu, cần làm thêm bằng một game engine như Godot hoặc Unity.</p>', unsafe_allow_html=True)
-Đã gửi
-Soạn
-Viết cho An Nguyễn Nguyễn
 
-
-An Nguyễn Nguyễn
-Đang hoạt động
-Mẹ❤️
-an.nguyen.nguyen.808592
-Đang hoạt động
-Trang cá nhân
-Bật lại
-Tìm kiếm
